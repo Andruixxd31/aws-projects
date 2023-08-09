@@ -19,7 +19,7 @@ resource "aws_instance" "dynamic-website-2" {
     instance_type = "t2.micro"
     security_groups = ["dynamic-website-2-SG"]
     key_name = aws_key_pair.instance_key.key_name
-    user_data = "./user-data.sh"
+    user_data = "${file("user-data.sh")}"
     tags = {
         Name = "terraform-test"
     }
