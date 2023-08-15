@@ -17,11 +17,12 @@ provider "aws" {
 resource "aws_instance" "dynamic-website-2" {
     ami = "ami-06ca3ca175f37dd66"
     instance_type = "t2.micro"
+    availability_zone = "${var.availability_zoneb}"
     security_groups = ["dynamic-website-2-SG"]
     key_name = aws_key_pair.instance_key.key_name
     user_data = "${file("user-data.sh")}"
     tags = {
-        Name = "terraform-test"
+        Name = "terraform-practice-1"
     }
 }
 
@@ -54,4 +55,19 @@ resource "aws_security_group" "dynamic-website-2" {
 resource "aws_key_pair" "instance_key" {
   key_name = "my_instance_key"
   public_key = file("${var.ssh_key}")
+}
+
+resource "aws_ebs_volume" "dw2-ebs" {
+  availability_zone = "${var.availability_zoneb}"
+  size              = 1
+
+  tags = {
+    Name = "terraform-practice-1"
+  }
+}
+
+resource "aws_volume_attachment" "dw2-ebs-att" {
+  device_name = "/dev/sdh"
+  volume_id   = aws_ebs_volume.dw2-ebs.id
+  instance_id = aws_instance.dynamic-website-2.id
 }
