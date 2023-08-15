@@ -20,7 +20,7 @@ nvm install --lts
 echo "Cloning website"
 mkdir -p /demo-website
 cd /demo-website
-git clone https://github.com/Andruixxd31/sample_website_ec2.git .
+git clone https://github.com/academind/aws-demos.git .
 cd dynamic-website-basic
 
 # Install dependencies
