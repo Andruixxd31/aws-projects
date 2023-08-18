@@ -40,7 +40,7 @@ fi
 sudo su
 echo "/dev/sdh /demo xfs defaults,nofail  0  2" >> /etc/fstab 
 mount -a
-exit
+su ec2-user
 
 # Forward port 80 traffic to port 3000
 echo "Forwarding 80 -> 3000"
