@@ -21,7 +21,6 @@ type Handler struct {
 type Response struct {
 	Status  int
 	Message string
-	Count   int
 }
 
 func NewHandler() *Handler {
@@ -64,6 +63,6 @@ func (h *Handler) Serve() error {
 
 func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/list-objects", h.ListBucketObjects)
-	h.Router.HandleFunc("/api/v1upload-object", h.UploadObject)
+	h.Router.HandleFunc("/api/v1/upload-object", h.UploadObject)
 	h.Router.HandleFunc("/api/v1/get-object", h.GetObject)
 }
