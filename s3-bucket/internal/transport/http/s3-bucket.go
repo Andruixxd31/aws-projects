@@ -15,6 +15,11 @@ type GetObjectRequest struct {
 	FileName string `json:"fileName"`
 }
 
+type UploadObjectRequest struct {
+	Key      string `json:"key"`
+	FileName string `json:"filename"`
+}
+
 func (h *Handler) ListBucketObjects(w http.ResponseWriter, r *http.Request) {
 	output, err := h.S3Service.ListObjectsV2(r.Context(), &s3.ListObjectsV2Input{
 		Bucket: aws.String("go-practice-bucket"),
@@ -47,6 +52,36 @@ func (h *Handler) ListBucketObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UploadObject(w http.ResponseWriter, r *http.Request) {
+	var gok UploadObjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&gok); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	file, err := os.Open(gok.FileName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	_, err = h.S3Service.PutObject(r.Context(), &s3.PutObjectInput{
+		Bucket: aws.String("go-practice-bucket"),
+		Key:    aws.String(gok.Key),
+		Body:   file,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "Object succesfully uploaded",
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	return
 }
 
 func (h *Handler) GetObject(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +120,12 @@ func (h *Handler) GetObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "File succesfully Downloaded",
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
 	return
 }
