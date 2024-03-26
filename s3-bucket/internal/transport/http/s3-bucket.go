@@ -1,0 +1,89 @@
+package http
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+)
+
+type GetObjectRequest struct {
+	Key      string `json:"key"`
+	FileName string `json:"fileName"`
+}
+
+func (h *Handler) ListBucketObjects(w http.ResponseWriter, r *http.Request) {
+	output, err := h.S3Service.ListObjectsV2(r.Context(), &s3.ListObjectsV2Input{
+		Bucket: aws.String("go-practice-bucket"),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	var response []map[string]any
+	for _, object := range output.Contents {
+		obj := map[string]any{
+			"key":  aws.ToString(object.Key),
+			"size": object.Size,
+		}
+		response = append(response, obj)
+	}
+
+	respJSON, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(respJSON)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) UploadObject(w http.ResponseWriter, r *http.Request) {
+}
+
+func (h *Handler) GetObject(w http.ResponseWriter, r *http.Request) {
+	var gok GetObjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&gok); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	object, err := h.S3Service.GetObject(r.Context(), &s3.GetObjectInput{
+		Bucket: aws.String("go-practice-bucket"),
+		Key:    aws.String(gok.Key),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	defer object.Body.Close()
+
+	file, err := os.Create(gok.FileName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	body, err := io.ReadAll(object.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = file.Write(body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	return
+}
